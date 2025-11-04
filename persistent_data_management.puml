@@ -1,0 +1,169 @@
+@startuml Persistent Data Management Flow - LEARNApp
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F8F9FA
+skinparam classBorderColor #343A40
+skinparam packageBackgroundColor #E9ECEF
+skinparam packageBorderColor #6C757D
+
+title Persistent Data Management Flow - LEARNApp
+
+package "UI Layer" as UI {
+    class FavoritesView
+    class LessonPlanDetailView
+    class SearchView
+    class ProfileView
+}
+
+package "Domain Layer" as Domain {
+    class Material {
+        +id: Int
+        +title: String
+        +duration: Int
+        +category: String
+        +grade: Int
+        +devices: [String]
+        +topics: [String]
+        +isFavorite: Bool
+        +toStoredActivity(): StoredActivity
+    }
+    
+    class FavoriteLessonPlan {
+        +id: Int
+        +name: String?
+        +activities: [Material]
+        +totalDuration: Int
+        +searchCriteria: [String: String]?
+        +createdAt: Date?
+    }
+    
+    class SearchHistory {
+        +id: Int
+        +searchCriteria: SearchCriteria
+        +resultsCount: Int
+        +createdAt: Date
+        +name: String?
+    }
+}
+
+package "Data Persistence Layer" as Persistence {
+    class FavoritesStore {
+        +load(for email: String): [Int]
+        +save(ids: [Int], for email: String)
+        +toggle(id: Int, for email: String)
+        --
+        Uses UserDefaults
+    }
+    
+    class LessonPlanStorage {
+        +save(favouriteId: Int, activities: [Material], ...)
+        +get(favouriteId: Int): StoredLessonPlanData?
+        +getAll(): [StoredLessonPlanData]
+        +delete(favouriteId: Int)
+        --
+        Uses UserDefaults + JSON
+    }
+    
+    class AuthStorage {
+        +accessToken: String?
+        +refreshToken: String?
+        +expiresAt: Date?
+        +clear()
+        --
+        Uses UserDefaults
+    }
+}
+
+package "Storage Models" as Storage {
+    class StoredLessonPlanData {
+        +favouriteId: Int
+        +activities: [StoredActivity]
+        +totalDuration: Int
+        +searchCriteria: [String: String]?
+        +name: String?
+        +createdAt: Date
+    }
+    
+    class StoredActivity {
+        +id: Int
+        +title: String
+        +duration: Int
+        +category: String
+        +grade: Int
+        +devices: [String]
+        +topics: [String]
+        +toMaterial(): Material
+    }
+}
+
+package "API Layer" as API {
+    class ActivitiesAPI {
+        +fetchMaterials()
+        +searchActivities()
+    }
+    
+    class AuthAPI {
+        +login()
+        +logout()
+        +refreshToken()
+    }
+}
+
+' Data Flow Relationships
+FavoritesView --> FavoritesStore : "Toggle favorite"
+FavoritesView --> Material : "Display materials"
+
+LessonPlanDetailView --> LessonPlanStorage : "Save lesson plan"
+LessonPlanDetailView --> Material : "Display activities"
+
+SearchView --> ActivitiesAPI : "Search activities"
+SearchView --> Material : "Display results"
+
+ProfileView --> AuthStorage : "Manage auth state"
+
+' Domain to Storage Mapping
+Material --> StoredActivity : "toStoredActivity()"
+StoredActivity --> Material : "toMaterial()"
+
+FavoriteLessonPlan --> StoredLessonPlanData : "Convert to storage format"
+StoredLessonPlanData --> FavoriteLessonPlan : "Convert to domain"
+
+' Persistence Layer Connections
+FavoritesStore --> UserDefaults : "Store favorite IDs"
+LessonPlanStorage --> UserDefaults : "Store JSON data"
+AuthStorage --> UserDefaults : "Store auth tokens"
+
+' API Connections
+ActivitiesAPI --> Material : "Fetch materials"
+AuthAPI --> AuthStorage : "Store tokens"
+
+' Data Flow Annotations
+note right of FavoritesView
+  User toggles favorite
+  → Updates FavoritesStore
+  → Persists to UserDefaults
+end note
+
+note right of LessonPlanDetailView
+  User saves lesson plan
+  → Converts Material[] to StoredActivity[]
+  → Stores as JSON in UserDefaults
+end note
+
+note right of SearchView
+  User searches
+  → Calls API
+  → Displays Material[]
+  → Can save as lesson plan
+end note
+
+note bottom of Persistence
+  **Storage Strategy:**
+  • UserDefaults for simple data
+  • JSON serialization for complex objects
+  • User-specific keys for isolation
+  • Offline-first approach
+end note
+
+@enduml
