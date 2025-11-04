@@ -60,3 +60,17 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
+
+# Xcode user data and workspace
+*.xcuserstate
+*.xcuserdata/
+xcuserdata/
+*.xcodeproj/project.xcworkspace/
+
+# Build output
+build/
+DerivedData/
+
+# macOS system files
+.DS_Store
+
