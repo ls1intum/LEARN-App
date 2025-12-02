@@ -1,0 +1,8 @@
+{
+  "label": "LEARNApp",
+  "position": 2,
+  "link": {
+    "type": "generated-index",
+    "description": "Welcome to LEARNApp, a digital assistant that helps elementary school teachers discover and manage computer science (CS) activities for their classrooms. This documentation walks you through all features — from browsing and filtering materials to saving favorites, generating activity recommendations, and managing your profile."
+  }
+}
